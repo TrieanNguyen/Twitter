@@ -1,0 +1,18 @@
+<configuration>
+	<property>
+        <name>fs.defaultFS</name>
+	<value>hdfs://master:9000</value>
+    </property>
+    <property>
+        <name>hadoop.tmp.dir</name>
+	<value>file:/usr/local/hadoop/tmp</value>
+    </property>
+    <property>
+        <name>io.file.buffer.size</name>
+        <value>131702</value>
+    </property>
+    <property>
+        <name>hadoop.http.staticuser.user</name>
+        <value>root</value>
+    </property>
+</configuration>

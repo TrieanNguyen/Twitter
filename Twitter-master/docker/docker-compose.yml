@@ -1,0 +1,83 @@
+version: "3"
+services:
+  worker1:
+    build:
+      context: spark/.
+    container_name: worker1
+    networks:
+      default:
+         ipv4_address: 172.16.0.16
+    extra_hosts:
+      - "master: 172.16.0.20"
+      - "worker2: 172.16.0.4"
+    command: bash -c  "
+         etc/init.d/ssh restart
+         && start-slave.sh spark://master:7077
+         && tail -f /dev/null"
+    ports:
+      - 22:22
+    hostname: worker1
+    restart: always
+  worker2:
+    build:
+      context: spark/.
+    container_name: worker2
+    networks:
+      default:
+         ipv4_address: 172.16.0.4
+    extra_hosts:
+        - "master: 172.16.0.20"
+        - "worker1: 172.16.0.16"
+    command: bash -c  "
+         etc/init.d/ssh restart
+         && start-slave.sh spark://master:7077
+         && tail -f /dev/null"
+    ports:
+      - 22:22
+    hostname: worker2
+    restart: always
+  master:
+    build:
+      context: spark/.
+      args:
+           FORMAT_NAMENODE_COMMAND: hdfs namenode -format
+    container_name: master
+    networks:
+      default:
+         ipv4_address: 172.16.0.20
+    extra_hosts:
+      - "worker1: 172.16.0.15"
+      - "worker2: 172.16.0.4"
+    command: bash -c  "
+        etc/init.d/ssh restart
+        && /usr/local/hadoop/sbin/start-all.sh
+        && /usr/local/spark/sbin/start-all.sh
+        && hdfs dfs -mkdir -p /spark-logs
+        && cron
+        && tail -f /dev/null"
+    ports:
+      - 50070:50070
+      - 8088:8088
+      - 22:22
+      - 8080:8080
+      - 8084:8084
+      - 4040:4040
+      - 18080:18080
+    hostname: master
+    restart: always
+  mysql:
+    image: mysql
+    container_name: mysql
+    command: --default-authentication-plugin=mysql_native_password
+    restart: always
+    environment:
+      MYSQL_ROOT_HOST: '%'
+      MYSQL_ROOT_PASSWORD: '123'
+    ports:
+      - 3306:3306
+      - 33060:33060
+    hostname: master
+networks:
+  default:
+    external:
+      name: spark-network
